@@ -70,7 +70,7 @@ class TestMoneyExchanging(TestCase):
         rate = ExchangeRate.objects.get(
             base_currency=eur, foreign_currency=default_currency)
         eur_pack = usd_pack.convert_to('EUR')
-        self.assertEqual(eur_pack.value, test_value / test_rate)
+        self.assertEqual(eur_pack.value, (test_value / test_rate).quantize(Decimal('.00001')))
 
         # testing cache and memoization
         with patch.object(cache, 'get') as cache_get, patch.object(cache, 'set') as cache_set:
@@ -96,7 +96,7 @@ class TestMoneyExchanging(TestCase):
         # test that cache do not give outdated values:
         usd_pack = Money(test_value, 'USD')
         eur_pack = usd_pack.convert_to('EUR')
-        self.assertEqual(eur_pack.value, test_value / rate.rate)
+        self.assertEqual(eur_pack.value, (test_value / rate.rate).quantize(Decimal('.00001')))
 
         new_rate = Decimal('1.33')
         rate.rate = new_rate
@@ -106,12 +106,12 @@ class TestMoneyExchanging(TestCase):
         # so I'm getting new instance here
         usd_pack = Money(test_value, 'USD')
         eur_pack = usd_pack.convert_to('EUR')
-        self.assertEqual(eur_pack.value, test_value / new_rate)
+        self.assertEqual(eur_pack.value, (test_value / new_rate).quantize(Decimal('.00001')))
 
         # testing money operations
         usd_money = Money(0, 'USD')
         self.assertEqual((usd_money * 5).value, Decimal('0'))
         self.assertEqual((usd_money.new('12') * Decimal('5.1')).value, Decimal('61.2'))
         self.assertEqual((usd_money.new('2') / Decimal('3')).value, Decimal('0.66667'))
-        self.assertEqual((usd_money.new('2.55387') + usd_money.new('1.33')).value, Decimal('3.8839'))
-        self.assertEqual((usd_money.new('2.55387') - usd_money.new('1.33')).value, Decimal('1.2239'))
+        self.assertEqual((usd_money.new('2.55387') + usd_money.new('1.33')).value, Decimal('3.88387'))
+        self.assertEqual((usd_money.new('2.55387') - usd_money.new('1.33')).value, Decimal('1.22387'))

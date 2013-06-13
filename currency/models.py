@@ -278,8 +278,9 @@ class Money(object):
     >>> # Ooops!
 
     """
-    def __init__(self, value, currency='USD'):
-        self.precision = ExchangeRate.PRECISION + 10
+    def __init__(self, value, currency='USD', max_digits=15):
+        self.precision = max_digits
+        places = ExchangeRate.PRECISION
         if not (isinstance(currency, basestring) and len(currency) == 3):
             raise TypeError("currency argument should be a string with lenght 3")
         self.currency = currency.upper()
@@ -288,7 +289,12 @@ class Money(object):
             self.value = value
         else:
             self.value = Decimal(str(value))
+        self.quantizator = Decimal(10) ** (-places)
+        self.value = self.quantize(self.value)
         return
+
+    def quantize(self, value):
+        return value.quantize(self.quantizator)
 
     def __unicode__(self):
         return "%s%s" % (self.value, self.currency)
@@ -342,12 +348,15 @@ class Money(object):
 
     def __mul__(self, other):
         getcontext().prec = self.precision
-        return self.new(self.value * Decimal(str(other)))
+        other = Decimal(str(other))
+        return self.new(self.value * other)
 
     def __div__(self, other):
         getcontext().prec = self.precision
-        return self.new(self.value / Decimal(str(other)))
+        other = Decimal(str(other))
+        return self.new(self.value / other)
 
     def __divmod__(self, other):
         getcontext().prec = self.precision
-        return self.new(divmod(self.value, Decimal(str(other))))
+        other = Decimal(str(other))
+        return self.new(divmod(self.value, other))
