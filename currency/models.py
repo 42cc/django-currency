@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-from decimal import Decimal, getcontext
+from decimal import Decimal, getcontext, Context
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -31,7 +31,7 @@ class Currency(models.Model):
 
     money_format = models.CharField(
         _('money format string'), max_length=64, blank=True,
-        default='%(currency)s%(value)s',
+        default='%(short_name)s%(value)s',
         help_text=_(r'e.g. %(value)s%(short_name)s'))
 
     class Meta:
@@ -105,7 +105,7 @@ class Currency(models.Model):
                                     .filter(foreign_currency=other_currency)
                                     .latest()
                 )
-                getcontext().prec = ExchangeRate.PRECISION
+                getcontext().prec = ExchangeRate.PRECISION + 10
                 new_rate = rate_to_self.rate / rate_to_other.rate
                 new_date = max(rate_to_self.date, rate_to_other.date)
                 indirect_rate = ExchangeRate(
@@ -118,6 +118,7 @@ class Currency(models.Model):
             pass
 
         is_reverse = False
+        rate = None
         if not indirect_rate:
             if direct_rate:
                 rate = direct_rate
@@ -141,7 +142,8 @@ class Currency(models.Model):
                             'Please investigate' % (direct_rate, indirect_rate))
                     else:
                         rate = indirect_rate
-
+        if rate is None:
+            raise Currency.DoesNotExist
         if rate == indirect_rate:
             rate.save()
         return (rate, is_reverse)
@@ -154,7 +156,7 @@ class Currency(models.Model):
         rate_object, reverse = self.get_rate_object(*args, **kwargs)
         rate = rate_object.rate
         if reverse:
-            getcontext().prec = ExchangeRate.PRECISION
+            getcontext().prec = ExchangeRate.PRECISION + 10
             rate = Decimal('1') / rate
         return rate
 
@@ -181,8 +183,8 @@ class ExchangeRate(models.Model):
     class Meta:
         ordering = ('-date', 'base_currency', 'foreign_currency')
         get_latest_by = 'date'
-        verbose_name = _('currency')
-        verbose_name_plural = _('currencies')
+        verbose_name = _('Exchange rate')
+        verbose_name_plural = _('Exchange rates')
         unique_together = (
             ('base_currency', 'foreign_currency', 'date'),
         )
@@ -250,9 +252,34 @@ def cached_get_rate(base_currency, foreign_currency):
 
 class Money(object):
 
-    """Helper class to handle money operations with Currency"""
+    """Helper class to handle money operations with Currency. Example:
+    >>> from currency.models import *
+    >>> my_money = Money(1531, 'USD')
+    >>> my_money *= 100
+    >>> my_money
+    <Money: 153100USD>
+    >>> my_money += Money(23, 'USD')
+    >>> my_money
+    <Money: 153123USD>
+    >>> my_money.convert_to('EUR')
+    ...
+    DoesNotExist
+    >>> usd = Currency.objects.get(code='USD')
+    >>> eur = Currency.objects.get(code='EUR')
+    >>> ExchangeRate.objects.create(base_currency=usd, foreign_currency=eur, rate=1/1.3)
+    <ExchangeRate: USD to EUR for 2013-06-13: 0.769230769231>
+    >>> ExchangeRate.objects.get(base_currency=usd, foreign_currency=eur)
+    <ExchangeRate: USD to EUR for 2013-06-13: 0.76923>
+    >>> # Be careful wheny you usd exchange rate right after creation!
+    >>> my_money.convert_to('EUR')
+    <Money: 117786.80529EUR>
+    >>> my_money.convert_to('EUR').convert_to('USD') - my_money
+    <Money: -3USD>
+    >>> # Ooops!
+
+    """
     def __init__(self, value, currency='USD'):
-        self.precision = ExchangeRate.PRECISION
+        self.precision = ExchangeRate.PRECISION + 10
         if not (isinstance(currency, basestring) and len(currency) == 3):
             raise TypeError("currency argument should be a string with lenght 3")
         self.currency = currency.upper()
@@ -267,7 +294,10 @@ class Money(object):
         return "%s%s" % (self.value, self.currency)
 
     def __str__(self):
-        return self.__unicode__
+        return self.__unicode__()
+
+    def __repr__(self):
+        return "<Money: %s>" % self.__str__()
 
     @staticmethod
     def same_currencies(one, other):
@@ -312,12 +342,12 @@ class Money(object):
 
     def __mul__(self, other):
         getcontext().prec = self.precision
-        return self.new(self.value * other)
+        return self.new(self.value * Decimal(str(other)))
 
     def __div__(self, other):
         getcontext().prec = self.precision
-        return self.new(self.value / other)
+        return self.new(self.value / Decimal(str(other)))
 
     def __divmod__(self, other):
         getcontext().prec = self.precision
-        return self.new(divmod(self.value, other))
+        return self.new(divmod(self.value, Decimal(str(other))))
