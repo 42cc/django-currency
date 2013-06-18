@@ -342,13 +342,11 @@ class Money(object):
     def __add__(self, other):
         with localcontext(self.context):
             self.same_currencies(self, other)
-            setcontext(self.context)
             return self.new(self.value + other.value)
 
     def __sub__(self, other):
         with localcontext(self.context):
             self.same_currencies(self, other)
-            getcontext().prec = self.precision
             return self.new(self.value - other.value)
 
     def __mul__(self, other):
