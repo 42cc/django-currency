@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-from decimal import Decimal, getcontext, Context, localcontext
+from decimal import Decimal, Context, localcontext
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -76,89 +76,89 @@ class Currency(models.Model):
 
         """
         # direct exchange rate
-        try:
-            direct_rate = (
-                self.rates.filter(foreign_currency=other_currency).latest()
-            )
-        except ExchangeRate.DoesNotExist:
-            direct_rate = None
-
-        try:
-            reverse_rate = (
-                other_currency.rates.filter(foreign_currency=self).latest()
-            )
-        except ExchangeRate.DoesNotExist:
-            reverse_rate = None
-
-        # indirect exchange rate
-        indirect_rate = False
-        try:
-            default_currency = Currency.get_default_currency()
-            if default_currency.code != self.code:
-                rate_to_self = (
-                    default_currency.rates
-                                    .filter(foreign_currency=self)
-                                    .latest()
+        with localcontext(Context(prec=ExchangeRate.PRECISION + 10)):
+            try:
+                direct_rate = (
+                    self.rates.filter(foreign_currency=other_currency).latest()
                 )
-                rate_to_other = (
-                    default_currency.rates
-                                    .filter(foreign_currency=other_currency)
-                                    .latest()
-                )
-                getcontext().prec = ExchangeRate.PRECISION + 10
-                new_rate = rate_to_self.rate / rate_to_other.rate
-                new_date = max(rate_to_self.date, rate_to_other.date)
-                indirect_rate = ExchangeRate(
-                    base_currency=self,
-                    foreign_currency=other_currency,
-                    rate=new_rate,
-                    date=new_date,
-                )
-        except ExchangeRate.DoesNotExist:
-            pass
+            except ExchangeRate.DoesNotExist:
+                direct_rate = None
 
-        is_reverse = False
-        rate = None
-        if not indirect_rate:
-            if direct_rate:
-                rate = direct_rate
-            elif reverse_rate:
-                rate = reverse_rate
-                is_reverse = True
-        else:
-            if not (direct_rate or reverse_rate):
-                rate = indirect_rate
-            else:  # we have both indirect and (reverse or direct) rates
+            try:
+                reverse_rate = (
+                    other_currency.rates.filter(foreign_currency=self).latest()
+                )
+            except ExchangeRate.DoesNotExist:
+                reverse_rate = None
+
+            # indirect exchange rate
+            indirect_rate = False
+            try:
+                default_currency = Currency.get_default_currency()
+                if default_currency.code != self.code:
+                    rate_to_self = (
+                        default_currency.rates
+                                        .filter(foreign_currency=self)
+                                        .latest()
+                    )
+                    rate_to_other = (
+                        default_currency.rates
+                                        .filter(foreign_currency=other_currency)
+                                        .latest()
+                    )
+                    new_rate = rate_to_self.rate / rate_to_other.rate
+                    new_date = max(rate_to_self.date, rate_to_other.date)
+                    indirect_rate = ExchangeRate(
+                        base_currency=self,
+                        foreign_currency=other_currency,
+                        rate=new_rate,
+                        date=new_date,
+                    )
+            except ExchangeRate.DoesNotExist:
+                pass
+
+            is_reverse = False
+            rate = None
+            if not indirect_rate:
                 if direct_rate:
                     rate = direct_rate
-                else:
+                elif reverse_rate:
                     rate = reverse_rate
                     is_reverse = True
-
-                if rate.date < indirect_rate.date:
-                    if not ignore_conflict:
-                        raise ValueError(
-                            'direct rate `%s` is older then indirect rate `%s`. '
-                            'Please investigate' % (direct_rate, indirect_rate))
+            else:
+                if not (direct_rate or reverse_rate):
+                    rate = indirect_rate
+                else:  # we have both indirect and (reverse or direct) rates
+                    if direct_rate:
+                        rate = direct_rate
                     else:
-                        rate = indirect_rate
-        if rate is None:
-            raise Currency.DoesNotExist
-        if rate == indirect_rate:
-            rate.save()
-        return (rate, is_reverse)
+                        rate = reverse_rate
+                        is_reverse = True
+
+                    if rate.date < indirect_rate.date:
+                        if not ignore_conflict:
+                            raise ValueError(
+                                'direct rate `%s` is older then indirect rate `%s`. '
+                                'Please investigate' % (direct_rate, indirect_rate))
+                        else:
+                            rate = indirect_rate
+            if rate is None:
+                raise Currency.DoesNotExist
+            if rate == indirect_rate:
+                rate.save()
+            return (rate, is_reverse)
 
     def get_rate(self, *args, **kwargs):
         """
         Get ExchangeRate instance from get_rate_object() and return
         `instance.rate`
         """
-        rate_object, reverse = self.get_rate_object(*args, **kwargs)
-        rate = rate_object.rate
-        if reverse:
-            getcontext().prec = ExchangeRate.PRECISION + 10
-            rate = Decimal('1') / rate
-        return rate
+        with localcontext(Context(prec=ExchangeRate.PRECISION + 10)):
+            rate_object, reverse = self.get_rate_object(*args, **kwargs)
+            rate = rate_object.rate
+            if reverse:
+                rate = Decimal('1') / rate
+            return rate
 
 
 def validate_positive(value):
