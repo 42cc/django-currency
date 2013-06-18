@@ -48,8 +48,8 @@ class TestMoneyExchanging(TestCase):
         rate.rate = '4.1'
         rate.save()
         rate = ExchangeRate.objects.get(pk=rate.pk)  # get stored value
-        self.assertEqual(hrn.get_rate(rub), rate.rate)
-        self.assertEqual(rub.get_rate(hrn), Decimal('1') / rate.rate)
+        self.assertAlmostEqual(hrn.get_rate(rub), rate.rate)
+        self.assertAlmostEqual(rub.get_rate(hrn), Decimal('1') / rate.rate)
 
         # check dates conflict:
         rate.date = rate.date - datetime.timedelta(days=1)
@@ -93,7 +93,7 @@ class TestMoneyExchanging(TestCase):
             self.assertEqual(cache_get.call_count, 2)
             self.assertEqual(cache_set.call_count, 1)
 
-        # test that cache do not give outdated values:
+        # test that caching do not result in outdated values:
         usd_pack = Money(test_value, 'USD')
         eur_pack = usd_pack.convert_to('EUR')
         self.assertEqual(eur_pack.value, (test_value / rate.rate).quantize(Decimal('.00001')))
