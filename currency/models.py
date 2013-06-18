@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-from decimal import Decimal, getcontext, Context, setcontext, BasicContext
+from decimal import Decimal, getcontext, Context, localcontext
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -285,14 +285,13 @@ class Money(object):
             raise TypeError("currency argument should be a string with lenght 3")
         self.currency = currency.upper()
         self.context = Context(prec=self.precision)
-        setcontext(self.context)
-        if isinstance(value, Decimal):
-            self.value = value
-        else:
-            self.value = Decimal(str(value))
-        self.quantizator = Decimal(10) ** (-places)
-        self.value = self.quantize(self.value)
-        setcontext(BasicContext)
+        with localcontext(self.context):
+            if isinstance(value, Decimal):
+                self.value = value
+            else:
+                self.value = Decimal(str(value))
+            self.quantizator = Decimal(10) ** (-places)
+            self.value = self.quantize(self.value)
         return
 
     def quantize(self, value):
@@ -328,50 +327,41 @@ class Money(object):
         Money
 
         """
-        setcontext(self.context)
-        rate = self.get_rate(other_currency)
-        result = Money(self.value * rate, other_currency)
-        setcontext(BasicContext)
-        return result
+        with localcontext(self.context):
+            rate = self.get_rate(other_currency)
+            result = Money(self.value * rate, other_currency)
+            return result
 
     def new(self, value):
         """Return new Money instance with same currency but different value
 
         """
-        result = Money(value, self.currency)
-        return result
+        with localcontext(self.context):
+            return Money(value, self.currency)
 
     def __add__(self, other):
-        self.same_currencies(self, other)
-        setcontext(self.context)
-        result = self.new(self.value + other.value)
-        setcontext(BasicContext)
-        return result
+        with localcontext(self.context):
+            self.same_currencies(self, other)
+            setcontext(self.context)
+            return self.new(self.value + other.value)
 
     def __sub__(self, other):
-        self.same_currencies(self, other)
-        getcontext().prec = self.precision
-        result = self.new(self.value - other.value)
-        setcontext(BasicContext)
-        return result
+        with localcontext(self.context):
+            self.same_currencies(self, other)
+            getcontext().prec = self.precision
+            return self.new(self.value - other.value)
 
     def __mul__(self, other):
-        getcontext().prec = self.precision
-        other = Decimal(str(other))
-        result = self.new(self.value * other)
-        setcontext(BasicContext)
-        return result
+        with localcontext(self.context):
+            other = Decimal(str(other))
+            return self.new(self.value * other)
 
     def __div__(self, other):
-        getcontext().prec = self.precision
-        other = Decimal(str(other))
-        result = self.new(self.value / other)
-        setcontext(BasicContext)
-        return result
+        with localcontext(self.context):
+            other = Decimal(str(other))
+            return self.new(self.value / other)
 
     def __divmod__(self, other):
-        getcontext().prec = self.precision
-        other = Decimal(str(other))
-        result = self.new(divmod(self.value, other))
-        setcontext(BasicContext)
-        return result
+        with localcontext(self.context):
+            other = Decimal(str(other))
+            return self.new(divmod(self.value, other))
