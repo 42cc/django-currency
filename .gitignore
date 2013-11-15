@@ -1,0 +1,9 @@
+*.log
+*.pot
+*.pyc
+*~*
+*.db
+*.dat
+local_settings.py
+django_hello_world/static/
+django_hello_world/media/

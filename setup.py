@@ -14,7 +14,7 @@ setup(
     author='Yaroslav Klyuyev (imposeren)',
     author_email='imposeren@gmail.com',
     url='https://github.com/42cc/django-currency',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test_project']),
     install_requires=[],
     include_package_data=True,
     zip_safe=False,
