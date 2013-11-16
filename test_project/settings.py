@@ -1,8 +1,4 @@
-import os
 
-SITE_PATH = os.path.abspath(os.path.dirname(__file__))
-PROJECT_PATH = os.path.normpath(os.path.join(SITE_PATH, '..', '..'))
-SRC_PATH = os.path.join(PROJECT_PATH, 'currency')
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -124,9 +120,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-
     'currency',
+    'django_nose',
 )
+
+# Test settings
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
