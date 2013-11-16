@@ -22,17 +22,17 @@ class Currency(models.Model):
     code = models.CharField('ISO 4217 code', max_length=3, unique=True)
 
     short_name = models.CharField(
-        _('Symbol or short name'), max_length=8, blank=True, default='',
-        help_text=_('e.g. $, руб.'))
+        _(u'Symbol or short name'), max_length=8, blank=True, default='',
+        help_text=_(u'e.g. $, руб.'))
 
     full_name = models.CharField(
-        _('Full name'), max_length=64, blank=True, default='',
-        help_text=_('e.g. holland dollar, ukrainian hryvnya'))
+        _(u'Full name'), max_length=64, blank=True, default='',
+        help_text=_(u'e.g. holland dollar, ukrainian hryvnya'))
 
     money_format = models.CharField(
-        _('money format string'), max_length=64, blank=True,
+        _(u'money format string'), max_length=64, blank=True,
         default='%(short_name)s%(value)s',
-        help_text=_(r'e.g. %(value)s%(short_name)s'))
+        help_text=_(ur'e.g. %(value)s%(short_name)s'))
 
     class Meta:
         ordering = ('code',)
@@ -174,11 +174,11 @@ class ExchangeRate(models.Model):
     foreign_currency = models.ForeignKey(Currency, related_name='reverse_rates')
 
     rate = models.DecimalField(
-        _('Exchange rate'), max_digits=9, decimal_places=PRECISION,
+        _(u'Exchange rate'), max_digits=9, decimal_places=PRECISION,
         default='1',
         validators=[validate_positive])
 
-    date = models.DateField(_('Settlement date'), default=datetime.date.today)
+    date = models.DateField(_(u'Settlement date'), default=datetime.date.today)
 
     class Meta:
         ordering = ('-date', 'base_currency', 'foreign_currency')
