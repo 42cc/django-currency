@@ -1,0 +1,15 @@
+*.py[cod]
+*.swp
+*.*~
+*.kate-swp
+*.tmproj
+.*
+*.sublime-*
+
+
+dist/
+build/
+*.egg-info
+.env/
+*.lock
+!.gitignore
