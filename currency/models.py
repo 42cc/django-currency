@@ -22,17 +22,17 @@ class Currency(models.Model):
     code = models.CharField('ISO 4217 code', max_length=3, unique=True)
 
     short_name = models.CharField(
-        _('Symbol or short name'), max_length=8, blank=True, default='',
+        _(u'Symbol or short name'), max_length=8, blank=True, default='',
         help_text=_(u'e.g. $, руб.'))
 
     full_name = models.CharField(
-        _('Full name'), max_length=64, blank=True, default='',
+        _(u'Full name'), max_length=64, blank=True, default='',
         help_text=_(u'e.g. holland dollar, ukrainian hryvnya'))
 
     money_format = models.CharField(
         _(u'money format string'), max_length=64, blank=True,
         default='%(short_name)s%(value)s',
-        help_text=_(r'e.g. %(value)s%(short_name)s'))
+        help_text=_(ur'e.g. %(value)s%(short_name)s'))
 
     class Meta:
         ordering = ('code',)
