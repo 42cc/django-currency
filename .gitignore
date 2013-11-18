@@ -12,4 +12,12 @@ build/
 *.egg-info
 .env/
 *.lock
+
+#test project
+local_settings.py
+django_hello_world/static/
+django_hello_world/media/
+*.db
+*.dat
+
 !.gitignore
