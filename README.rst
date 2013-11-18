@@ -43,14 +43,14 @@ Example usage
    ExchangeRate.objects.create(
        base_currency=default_currency, foreign_currency=hrn,
        rate='0.125')
-   # get stored value:
+   # get stored value to normalize decimals precision:
    rate1 = ExchangeRate.objects.get(
        base_currency=default_currency, foreign_currency=hrn)
 
    ExchangeRate.objects.create(
        base_currency=default_currency, foreign_currency=rub,
        rate='0.03125')
-   # get stored value:
+   # get stored value to normalize decimals precision:
    rate2 = ExchangeRate.objects.get(
        base_currency=default_currency, foreign_currency=rub)
 
