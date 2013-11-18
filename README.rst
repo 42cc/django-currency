@@ -34,3 +34,24 @@ Example usage
 
    # be careful with conversions. Errors accumulate with each conversion. Example:
    print(my_money.convert_to('EUR').convert_to('USD'))  # 1553.99845USD
+
+
+   # indirect rates through rates of default currency (USD) are available too
+   hrn = Currency.objects.create(code='UAH', short_name='hrn')
+   rub = Currency.objects.create(code='RUB', short_name='rub')
+
+   ExchangeRate.objects.create(
+       base_currency=default_currency, foreign_currency=hrn,
+       rate='0.125')
+   # get stored value:
+   rate1 = ExchangeRate.objects.get(
+       base_currency=default_currency, foreign_currency=hrn)
+
+   ExchangeRate.objects.create(
+       base_currency=default_currency, foreign_currency=rub,
+       rate='0.03125')
+   # get stored value:
+   rate2 = ExchangeRate.objects.get(
+       base_currency=default_currency, foreign_currency=rub)
+
+   self.assertEqual(hrn.get_rate(rub), rate1.rate / rate2.rate)
