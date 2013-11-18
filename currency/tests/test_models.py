@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
+
+# system:
 from decimal import Decimal
 import datetime
 
-from mock import patch
-from tddspry.django import TestCase
-
-from ..models import Currency, ExchangeRate, Money
+# django:
 from django.core.cache import cache
+from django.test import TestCase
+
+# thirdparty
+from mock import patch
+
+# local
+from ..models import Currency, ExchangeRate, Money
 
 
 class TestMoneyExchanging(TestCase):
