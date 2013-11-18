@@ -6,7 +6,7 @@ from mock import patch
 from tddspry.django import TestCase
 
 from ..models import Currency, ExchangeRate, Money
-#from kavyarnya.core.decorators import cache
+from django.core.cache import cache
 
 
 class TestMoneyExchanging(TestCase):
@@ -73,26 +73,26 @@ class TestMoneyExchanging(TestCase):
         self.assertEqual(eur_pack.value, (test_value / test_rate).quantize(Decimal('.00001')))
 
         # testing cache and memoization
-        #with patch.object(cache, 'get') as cache_get:
-            #with patch.object(cache, 'set') as cache_set:
-                ## get_rate is memoized:
-                #eur_pack = usd_pack.convert_to('EUR')
-                #self.assertEqual(cache_get.call_count, 0)
-                #self.assertEqual(cache_set.call_count, 0)
+        with patch.object(cache, 'get') as cache_get:
+            with patch.object(cache, 'set') as cache_set:
+                # get_rate is memoized:
+                eur_pack = usd_pack.convert_to('EUR')
+                self.assertEqual(cache_get.call_count, 0)
+                self.assertEqual(cache_set.call_count, 0)
 
-                ## reset memoization and test cached value
-                #usd_pack = Money(test_value, 'USD')
-                #cache_get.return_value = Decimal('1.3')
-                #eur_pack = usd_pack.convert_to('EUR')
-                #self.assertEqual(cache_get.call_count, 1)
-                #self.assertEqual(cache_set.call_count, 0)
+                # reset memoization and test cached value
+                usd_pack = Money(test_value, 'USD')
+                cache_get.return_value = Decimal('1.3')
+                eur_pack = usd_pack.convert_to('EUR')
+                self.assertEqual(cache_get.call_count, 1)
+                self.assertEqual(cache_set.call_count, 0)
 
-                ## reset memoization and test cache setting:
-                #usd_pack = Money(test_value, 'USD')
-                #cache_get.return_value = None
-                #eur_pack = usd_pack.convert_to('EUR')
-                #self.assertEqual(cache_get.call_count, 2)
-                #self.assertEqual(cache_set.call_count, 1)
+                # reset memoization and test cache setting:
+                usd_pack = Money(test_value, 'USD')
+                cache_get.return_value = None
+                eur_pack = usd_pack.convert_to('EUR')
+                self.assertEqual(cache_get.call_count, 2)
+                self.assertEqual(cache_set.call_count, 1)
 
         # test that caching do not result in outdated values:
         usd_pack = Money(test_value, 'USD')
