@@ -2,9 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-currency',
-    version='0.0.7',
+    version='0.0.8',
     description="simple currency handling for djagngo",
     classifiers=[
+        "Development Status :: 4 - Beta",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Framework :: Django",
