@@ -15,11 +15,11 @@ Example usage
 
 
 .. code-block:: python
-    
+
    from currency.models import Currency, ExchangeRate, Money
 
-   usd = Currency.objects.create(code='USD', short_name='$')
-   eur = Currency.objects.create(code='EUR', short_name='€')
+   usd = Currency.objects.create(code='USD', short_name=u'$')
+   eur = Currency.objects.create(code='EUR', short_name=u'€')
 
    ExchangeRate.objects.create(base_currency=usd, foreign_currency=eur, rate=1/1.3)
 
